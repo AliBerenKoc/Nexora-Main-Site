@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090711">
+  <meta name="description" content="NEXORA — independent web development, browser tools, and experimental digital projects.">
+  <title>NEXORA | Modern Web Experiences</title>
+  <link rel="icon" type="image/png" href="dragon-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090711;
+      --bg-soft: #100d1b;
+      --panel: rgba(21, 17, 35, .78);
+      --panel-solid: #151123;
+      --text: #f7f3ff;
+      --muted: #aaa1bd;
+      --purple: #a855f7;
+      --purple-light: #c084fc;
+      --purple-dark: #7e22ce;
+      --border: rgba(192, 132, 252, .18);
+      --glow: 0 0 38px rgba(168, 85, 247, .18);
+      --radius: 22px;
+      --max: 1160px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: Inter, sans-serif; line-height: 1.65; overflow-x: hidden;
+    }
+    body.modal-open { overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; }
+    ::selection { background: rgba(168,85,247,.38); color: white; }
+    .ambient {
+      position: fixed; inset: 0; z-index: -3; pointer-events: none; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 15% 12%, rgba(126,34,206,.18), transparent 35%),
+        radial-gradient(ellipse at 85% 35%, rgba(88,28,135,.14), transparent 36%),
+        linear-gradient(180deg, #090711, #0b0813 55%, #090711);
+    }
+    .ambient::after {
+      content: ""; position: absolute; inset: 0; opacity: .15;
+      background-image: radial-gradient(rgba(216,180,254,.7) .6px, transparent .6px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, black, transparent 80%);
+    }
+    #particles-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; pointer-events:none; opacity:.55; }
+    .container { width: min(var(--max), calc(100% - 44px)); margin-inline: auto; }
+    .section { padding: 110px 0; position: relative; }
+    .section-heading { max-width: 720px; margin: 0 auto 48px; text-align: center; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 9px; color: var(--purple-light);
+      font-size: .76rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    }
+    .eyebrow::before { content:""; width: 22px; height: 1px; background: currentColor; }
+    h1,h2,h3,p { margin-top: 0; }
+    h1,h2,h3 { line-height: 1.15; }
+    h2 { font-family: Orbitron, sans-serif; font-size: clamp(2rem, 4.5vw, 3.2rem); letter-spacing: -.045em; margin: 16px 0; }
+    .gradient-text { background: linear-gradient(110deg,#fff 4%,#d8b4fe 45%,#a855f7 95%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .section-heading p { color: var(--muted); max-width: 620px; margin: 0 auto; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 48px; padding: 0 22px; border-radius: 12px; border: 1px solid transparent;
+      font-weight: 700; font-size: .91rem; cursor: pointer; transition: transform .22s, box-shadow .22s, background .22s, border-color .22s;
+    }
+    .btn:hover { transform: translateY(-3px); }
+    .btn-primary { color: white; background: linear-gradient(120deg,#9333ea,#a855f7 55%,#7e22ce); box-shadow: 0 10px 30px rgba(147,51,234,.25); }
+    .btn-primary:hover { box-shadow: 0 12px 38px rgba(168,85,247,.38); }
+    .btn-secondary { border-color: var(--border); background: rgba(255,255,255,.025); color: #e9ddfb; }
+    .btn-secondary:hover { border-color: rgba(192,132,252,.5); background: rgba(168,85,247,.08); }
+    .btn:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--purple-light); outline-offset: 4px; }
+    /* Loader */
+    .loader { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: #090711; transition: opacity .55s ease, visibility .55s ease; }
+    .loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader-inner { display:flex; flex-direction:column; align-items:center; gap:16px; }
+    .loader-mark { width: 72px; height:72px; object-fit:contain; filter: drop-shadow(0 0 22px rgba(168,85,247,.5)); animation: loaderPulse 1.4s ease-in-out infinite; }
+    .loader-word { font: 700 .8rem Orbitron,sans-serif; letter-spacing:.35em; color:#e9d5ff; }
+    .loader-line { width:120px; height:2px; border-radius:2px; background:#251735; overflow:hidden; }
+    .loader-line::after { content:""; display:block; width:45%; height:100%; background:var(--purple-light); animation: loading 1.2s ease-in-out infinite; }
+    @keyframes loading { from{transform:translateX(-110%)} to{transform:translateX(240%)} }
+    @keyframes loaderPulse { 50%{transform:scale(1.06); filter:drop-shadow(0 0 32px rgba(168,85,247,.8))} }
+    /* Navigation */
+    .navbar { position:fixed; top:0; left:0; right:0; z-index:1000; border-bottom:1px solid transparent; transition: background .25s,border-color .25s,backdrop-filter .25s; }
+    .navbar.scrolled { background:rgba(9,7,17,.84); border-color:rgba(192,132,252,.1); backdrop-filter:blur(18px); }
+    .nav-inner { height:78px; display:flex; align-items:center; justify-content:space-between; gap:25px; }
+    .brand { display:inline-flex; align-items:center; gap:10px; font:800 1.12rem Orbitron,sans-serif; letter-spacing:.08em; }
+    .brand img { width:38px; height:38px; object-fit:contain; filter:drop-shadow(0 0 12px rgba(168,85,247,.35)); }
+    .brand span { background:linear-gradient(90deg,#fff,#c084fc); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .nav-links { display:flex; align-items:center; gap:30px; list-style:none; margin:0; padding:0; }
+    .nav-links a { color:#c5bdd4; font-size:.86rem; font-weight:600; transition:color .2s; }
+    .nav-links a:hover { color:#fff; }
+    .nav-cta { min-height:40px; padding:0 16px; font-size:.82rem; }
+    .hamburger { display:none; width:42px; height:42px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03); cursor:pointer; }
+    .hamburger span { display:block; width:18px; height:2px; margin:4px auto; background:#eee2ff; transition:.2s; }
+    .mobile-menu { display:none; }
+    /* Hero */
+    .hero { min-height: 780px; min-height: min(900px, 100svh); padding: 145px 0 80px; display:flex; align-items:center; position:relative; isolation:isolate; overflow:hidden; }
+    .hero-video { position:absolute; inset:0; z-index:-2; overflow:hidden; pointer-events:none; }
+    .hero-video video { width:100%; height:100%; object-fit:cover; opacity:.18; filter:saturate(.7) hue-rotate(12deg); }
+    .hero-video::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(9,7,17,.98),rgba(9,7,17,.72) 55%,rgba(9,7,17,.88)),linear-gradient(0deg,#090711 0%,transparent 40%,#090711 100%); }
+    .hero-content { max-width:850px; position:relative; z-index:1; }
+    .hero-badge { display:inline-flex; align-items:center; gap:9px; border:1px solid rgba(192,132,252,.25); background:rgba(168,85,247,.08); padding:7px 12px; border-radius:999px; color:#e9d5ff; font-size:.75rem; font-weight:700; letter-spacing:.035em; margin-bottom:24px; }
+    .status-dot { width:7px; height:7px; border-radius:50%; background:#c084fc; box-shadow:0 0 12px #a855f7; }
+    .hero h1 { font:800 clamp(2.8rem, 8vw, 6.6rem)/1.02 Orbitron,sans-serif; letter-spacing:-.075em; margin:0 0 26px; max-width:900px; }
+    .hero h1 .line-two { display:block; }
+    .hero-copy { max-width:620px; color:#bcb2ce; font-size:clamp(1rem,1.5vw,1.13rem); margin-bottom:30px; }
+    .hero-actions { display:flex; flex-wrap:wrap; gap:13px; }
+    .hero-meta { display:flex; flex-wrap:wrap; gap:22px; margin-top:42px; color:#9187a4; font-size:.78rem; }
+    .hero-meta span { display:flex; align-items:center; gap:8px; }
+    .hero-meta span::before { content:""; width:5px; height:5px; background:#a855f7; border-radius:50%; }
+    .scroll-cue { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); color:#817691; font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .scroll-cue::after { content:""; width:1px; height:27px; background:linear-gradient(var(--purple-light),transparent); }
+    /* Logo strip */
+    .logo-strip { padding:24px 0; border-top:1px solid rgba(192,132,252,.09); border-bottom:1px solid rgba(192,132,252,.09); background:rgba(255,255,255,.012); }
+    .strip-inner { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:16px 38px; color:#8f849f; font-size:.76rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+    .strip-inner .strip-label { color:#665a78; font-size:.67rem; }
+    .strip-inner .strip-item { color:#b3a5c8; }
+    /* Services */
+    .services-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .service-card { position:relative; padding:28px; min-height:255px; border:1px solid var(--border); border-radius:var(--radius); background:linear-gradient(145deg,rgba(27,20,43,.88),rgba(14,11,23,.88)); transition:transform .28s,border-color .28s,box-shadow .28s; overflow:hidden; }
+    .service-card::before { content:""; position:absolute; width:160px; height:160px; right:-75px; top:-80px; border-radius:50%; background:rgba(168,85,247,.11); filter:blur(5px); transition:transform .3s; }
+    .service-card:hover { transform:translateY(-6px); border-color:rgba(192,132,252,.45); box-shadow:var(--glow); }
+    .service-card:hover::before { transform:scale(1.5); }
+    .service-icon { display:grid; place-items:center; width:48px; height:48px; border:1px solid rgba(192,132,252,.2); border-radius:14px; background:rgba(168,85,247,.11); font-size:1.35rem; margin-bottom:24px; }
+    .service-card h3 { font-size:1.1rem; margin-bottom:11px; }
+    .service-card p { color:var(--muted); font-size:.9rem; margin-bottom:0; }
+    /* Projects */
+    .projects-section { background:linear-gradient(180deg,transparent,rgba(25,14,42,.28),transparent); }
+    .bento-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px; }
+    .bento-card { grid-column:span 3; min-width:0; position:relative; padding:0; text-align:left; color:inherit; border:1px solid var(--border); border-radius:var(--radius); background:linear-gradient(145deg,rgba(26,20,42,.92),rgba(13,10,22,.96)); overflow:hidden; cursor:pointer; transition:transform .28s,border-color .28s,box-shadow .28s; }
+    .bento-card:first-child { grid-column:span 3; }
+    .bento-card:hover { transform:translateY(-5px); border-color:rgba(192,132,252,.48); box-shadow:0 18px 50px rgba(0,0,0,.22),var(--glow); }
+    .bento-thumb { height:145px; display:grid; place-items:center; font-size:3rem; position:relative; overflow:hidden; background:radial-gradient(ellipse at 50% 80%,rgba(168,85,247,.24),transparent 60%),linear-gradient(135deg,rgba(168,85,247,.09),rgba(32,18,48,.3)); border-bottom:1px solid rgba(192,132,252,.1); }
+    .bento-thumb::before,.bento-thumb::after { content:""; position:absolute; border:1px solid rgba(192,132,252,.12); border-radius:50%; width:180px; height:180px; }
+    .bento-thumb::after { width:240px; height:240px; }
+    .bento-thumb span { position:relative; z-index:1; filter:drop-shadow(0 0 20px rgba(192,132,252,.45)); }
+    .bento-info { padding:24px; }
+    .bento-badge { display:inline-flex; align-items:center; border-radius:999px; padding:5px 9px; font-size:.67rem; font-weight:800; letter-spacing:.04em; margin-bottom:13px; border:1px solid transparent; }
+    .badge-live { color:#86efac; background:rgba(34,197,94,.09); border-color:rgba(34,197,94,.2); }
+    .badge-dev { color:#fcd34d; background:rgba(245,158,11,.09); border-color:rgba(245,158,11,.22); }
+    .badge-coming { color:#d8b4fe; background:rgba(168,85,247,.1); border-color:rgba(168,85,247,.25); }
+    .badge-exp { color:#c4b5fd; background:rgba(139,92,246,.1); border-color:rgba(139,92,246,.23); }
+    .bento-title { font-size:1.25rem; font-weight:800; letter-spacing:-.025em; margin-bottom:9px; }
+    .bento-desc { color:var(--muted); font-size:.88rem; margin-bottom:18px; }
+    .bento-tech { display:flex; flex-wrap:wrap; gap:7px; }
+    .tech-pill { display:inline-flex; align-items:center; padding:5px 9px; border-radius:7px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); color:#c4b7d7; font-size:.69rem; font-weight:600; }
+    .project-hint { display:flex; align-items:center; gap:7px; margin-top:20px; color:#a78bfa; font-size:.77rem; font-weight:700; }
+    /* About */
+    .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:70px; align-items:center; }
+    .about-copy h2 { max-width:560px; }
+    .about-copy > p { color:var(--muted); }
+    .about-note { margin-top:24px; padding:18px 20px; border-left:2px solid var(--purple); background:rgba(168,85,247,.06); border-radius:0 12px 12px 0; color:#c8bdd8; font-size:.87rem; }
+    .about-visual { position:relative; min-height:360px; display:grid; place-items:center; border:1px solid var(--border); border-radius:28px; background:radial-gradient(ellipse at center,rgba(126,34,206,.2),transparent 62%),rgba(255,255,255,.015); overflow:hidden; }
+    .about-orbit { width:250px; height:250px; border:1px solid rgba(192,132,252,.28); border-radius:50%; display:grid; place-items:center; position:relative; box-shadow:0 0 70px rgba(168,85,247,.08); }
+    .about-orbit::before,.about-orbit::after { content:""; position:absolute; inset:24px; border:1px dashed rgba(192,132,252,.24); border-radius:50%; animation:spin 26s linear infinite; }
+    .about-orbit::after { inset:-22px; border-style:solid; opacity:.5; animation-direction:reverse; animation-duration:36s; }
+    .about-orbit img { width:115px; height:115px; object-fit:contain; filter:drop-shadow(0 0 28px rgba(168,85,247,.5)); }
+    .orbit-tag { position:absolute; padding:7px 11px; border-radius:9px; border:1px solid var(--border); background:#100c1b; color:#d8c8eb; font-size:.72rem; font-weight:700; }
+    .orbit-tag.tag-one { top:36px; left:20px; }
+    .orbit-tag.tag-two { right:17px; top:115px; }
+    .orbit-tag.tag-three { bottom:33px; left:30px; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    /* Stack */
+    .stack-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .stack-item { display:flex; align-items:center; gap:12px; padding:17px; border:1px solid rgba(192,132,252,.13); border-radius:14px; background:rgba(255,255,255,.018); color:#cfc3df; font-size:.85rem; font-weight:700; transition:background .2s,border-color .2s,transform .2s; }
+    .stack-item:hover { background:rgba(168,85,247,.07); border-color:rgba(192,132,252,.35); transform:translateY(-2px); }
+    .stack-icon { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; background:rgba(168,85,247,.12); color:#d8b4fe; font-size:.82rem; }
+    /* Contact */
+    .contact-shell { display:grid; grid-template-columns:.85fr 1.15fr; gap:42px; padding:clamp(24px,5vw,52px); border:1px solid var(--border); border-radius:28px; background:linear-gradient(140deg,rgba(29,20,47,.85),rgba(13,10,22,.92)); box-shadow:var(--glow); }
+    .contact-copy h2 { font-size:clamp(1.8rem,4vw,2.8rem); }
+    .contact-copy p { color:var(--muted); }
+    .contact-detail { display:flex; align-items:center; gap:12px; margin-top:24px; color:#d6c8e6; font-size:.87rem; }
+    .contact-detail .service-icon { width:40px; height:40px; margin:0; font-size:1rem; }
+    .contact-form { display:grid; gap:15px; }
+    .field { display:grid; gap:7px; }
+    .field label { color:#d7cce5; font-size:.78rem; font-weight:700; }
+    .field input,.field textarea { width:100%; padding:13px 14px; color:var(--text); background:rgba(5,4,10,.5); border:1px solid rgba(192,132,252,.18); border-radius:11px; outline:none; transition:border-color .2s,box-shadow .2s; }
+    .field input:focus,.field textarea:focus { border-color:rgba(192,132,252,.6); box-shadow:0 0 0 3px rgba(168,85,247,.08); }
+    .field textarea { min-height:120px; resize:vertical; }
+    .form-note { color:#887d99; font-size:.74rem; margin:0; }
+    /* Footer */
+    footer { border-top:1px solid rgba(192,132,252,.1); padding:27px 0; }
+    .footer-inner { display:flex; align-items:center; justify-content:space-between; gap:18px; color:#8f849f; font-size:.77rem; }
+    .footer-links { display:flex; flex-wrap:wrap; gap:18px; }
+    .footer-links a:hover { color:#e9d5ff; }
+    /* Modal */
+    .modal { position:fixed; inset:0; z-index:2000; display:grid; place-items:center; padding:20px; background:rgba(5,4,10,.78); backdrop-filter:blur(12px); opacity:0; visibility:hidden; transition:opacity .22s,visibility .22s; }
+    .modal.open { opacity:1; visibility:visible; }
+    .modal-panel { width:min(560px,100%); max-height:min(85svh,720px); overflow:auto; position:relative; padding:clamp(24px,5vw,38px); border:1px solid rgba(192,132,252,.28); border-radius:24px; background:linear-gradient(145deg,#1a1329,#0e0b17); box-shadow:0 25px 100px rgba(0,0,0,.5),0 0 55px rgba(168,85,247,.13); transform:translateY(12px) scale(.98); transition:transform .22s; }
+    .modal.open .modal-panel { transform:translateY(0) scale(1); }
+    .modal-close { position:absolute; top:16px; right:16px; width:38px; height:38px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.04); cursor:pointer; font-size:1.2rem; }
+    .modal-icon { width:62px; height:62px; display:grid; place-items:center; border-radius:18px; border:1px solid var(--border); background:rgba(168,85,247,.1); font-size:1.9rem; margin-bottom:20px; }
+    .modal-panel h3 { font:700 clamp(1.45rem,4vw,2rem) Orbitron,sans-serif; letter-spacing:-.04em; margin:0 45px 12px 0; }
+    .modal-panel p { color:var(--muted); font-size:.93rem; }
+    .modal-tech-wrap { margin:22px 0 26px; }
+    .modal-tech-label { color:#9f91b1; text-transform:uppercase; letter-spacing:.13em; font-size:.67rem; font-weight:800; margin-bottom:10px; }
+    .modal-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    /* Scroll reveal */
+    .reveal { opacity:0; transform:translateY(18px); transition:opacity .65s ease,transform .65s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+    .reveal-delay-1 { transition-delay:.1s; }
+    .reveal-delay-2 { transition-delay:.18s; }
+    @media (prefers-reduced-motion: reduce) {
+      *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+      .reveal { opacity:1; transform:none; }
+    }
+    @media (max-width:900px) {
+      .nav-links { gap:18px; }
+      .services-grid { grid-template-columns:repeat(2,1fr); }
+      .about-grid { gap:35px; }
+      .stack-grid { grid-template-columns:repeat(3,1fr); }
+      .contact-shell { gap:25px; }
+    }
+    @media (max-width:700px) {
+      .container { width:min(100% - 32px,var(--max)); }
+      .section { padding:78px 0; }
+      .nav-inner { height:70px; }
+      .nav-links,.nav-cta { display:none; }
+      .hamburger { display:block; }
+      .mobile-menu { position:absolute; top:70px; left:16px; right:16px; display:flex; flex-direction:column; gap:0; padding:8px; border:1px solid var(--border); border-radius:16px; background:rgba(13,10,22,.97); backdrop-filter:blur(16px); opacity:0; visibility:hidden; transform:translateY(-8px); transition:.2s; }
+      .mobile-menu.open { opacity:1; visibility:visible; transform:translateY(0); }
+      .mobile-menu a { padding:13px 12px; color:#d6c8e6; border-radius:9px; font-size:.9rem; }
+      .mobile-menu a:hover { background:rgba(168,85,247,.1); color:white; }
+      .hamburger.open span:first-child { transform:translateY(6px) rotate(45deg); }
+      .hamburger.open span:nth-child(2) { opacity:0; }
+      .hamburger.open span:last-child { transform:translateY(-6px) rotate(-45deg); }
+      .hero { min-height:760px; min-height:90svh; padding-top:125px; padding-bottom:85px; }
+      .hero h1 { font-size:clamp(2.55rem,12vw,4.5rem); }
+      .hero-meta { gap:12px 18px; }
+      .services-grid { grid-template-columns:1fr; }
+      .service-card { min-height:0; }
+      .bento-grid { grid-template-columns:1fr; }
+      .bento-card,.bento-card:first-child { grid-column:span 1; }
+      .bento-thumb { height:125px; }
+      .about-grid { grid-template-columns:1fr; }
+      .about-visual { min-height:330px; order:-1; }
+      .stack-grid { grid-template-columns:repeat(2,1fr); }
+      .stack-item { padding:13px 11px; font-size:.78rem; }
+      .contact-shell { grid-template-columns:1fr; }
+      .footer-inner { flex-direction:column; align-items:flex-start; }
+      .scroll-cue { display:none; }
+    }
+    @media (max-width:380px) {
+      .hero-actions .btn { width:100%; }
+      .stack-grid { grid-template-columns:1fr 1fr; }
+      .stack-item { gap:8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <canvas id="particles-canvas" aria-hidden="true"></canvas>
+
+  <div class="loader" id="loader" aria-label="Loading NEXORA">
+    <div class="loader-inner">
+      <img class="loader-mark" src="dragon-logo.png" alt="" onerror="this.style.display='none'">
+      <div class="loader-word">NEXORA</div>
+      <div class="loader-line"></div>
+    </div>
+  </div>
+
+  <header class="navbar" id="navbar">
+    <div class="container nav-inner">
+      <a class="brand" href="#home" aria-label="NEXORA home">
+        <img src="dragon-logo.png" alt="" onerror="this.style.display='none'">
+        <span>NEXORA</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links">
+          <li><a href="#services">Services</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#stack">Tech Stack</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn-primary nav-cta" href="#contact">Let's Talk <span aria-hidden="true">↗</span></a>
+      <button class="hamburger" id="hamburger" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile navigation">
+      <a href="#services">Services</a>
+      <a href="#projects">Projects</a>
+      <a href="#about">About</a>
+      <a href="#stack">Tech Stack</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-video" aria-hidden="true">
+        <video id="heroVideo" muted loop autoplay playsinline preload="metadata" poster="dragon-logo.png">
+          <source src="dragon-animation.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-badge"><span class="status-dot"></span> Independent digital projects & web experiences</div>
+          <h1>Build beyond<br><span class="line-two gradient-text">the ordinary.</span></h1>
+          <p class="hero-copy">NEXORA explores the space between thoughtful design and useful technology — from web experiences and browser tools to experimental projects.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#projects">Explore Projects <span aria-hidden="true">↘</span></a>
+            <a class="btn btn-secondary" href="#about">About NEXORA</a>
+          </div>
+          <div class="hero-meta">
+            <span>Design-minded development</span>
+            <span>Web technologies</span>
+            <span>Independent experiments</span>
+          </div>
+        </div>
+      </div>
+      <a class="scroll-cue" href="#services">Scroll to explore</a>
+    </section>
+
+    <div class="logo-strip">
+      <div class="container strip-inner">
+        <span class="strip-label">Areas of focus</span>
+        <span class="strip-item">Web Experiences</span>
+        <span class="strip-item">Browser Tools</span>
+        <span class="strip-item">Interactive UI</span>
+        <span class="strip-item">Experiments</span>
+      </div>
+    </div>
+
+    <section class="section" id="services">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="eyebrow">What I work on</span>
+          <h2>Ideas into <span class="gradient-text">experiences.</span></h2>
+          <p>Focused, practical digital work with attention to usability, performance, and visual detail.</p>
+        </div>
+        <div class="services-grid">
+          <article class="service-card reveal">
+            <div class="service-icon" aria-hidden="true">✦</div>
+            <h3>Web Development</h3>
+            <p>Responsive websites and interfaces built around clear structure, accessible interactions, and a distinctive visual identity.</p>
+          </article>
+          <article class="service-card reveal reveal-delay-1">
+            <div class="service-icon" aria-hidden="true">⌘</div>
+            <h3>Browser Tools</h3>
+            <p>Small, purpose-built browser utilities that improve everyday browsing and remove unnecessary friction.</p>
+          </article>
+          <article class="service-card reveal reveal-delay-2">
+            <div class="service-icon" aria-hidden="true">◈</div>
+            <h3>Technical Experiments</h3>
+            <p>Exploring technologies such as WebAssembly, interactive interfaces, and browser-based applications.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section projects-section" id="projects">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="eyebrow">Selected work</span>
+          <h2>Featured <span class="gradient-text">projects.</span></h2>
+          <p>A mix of browser tooling, active experiments, and concepts. Open a card to see its details and available links.</p>
+        </div>
+        <div class="bento-grid" id="projectGrid">
+          <button class="bento-card reveal" type="button" data-project="0">
+            <div class="bento-thumb"><span aria-hidden="true">🛡️</span></div>
+            <div class="bento-info">
+              <span class="bento-badge badge-exp">Browser Extension</span>
+              <div class="bento-title">Kick Ad Blocker</div>
+              <div class="bento-desc">A browser extension developed to block advertisements on Kick.com and provide a cleaner viewing experience.</div>
+              <div class="bento-tech"><span class="tech-pill">Browser Extension</span><span class="tech-pill">Kick.com</span></div>
+              <div class="project-hint">View details <span aria-hidden="true">↗</span></div>
+            </div>
+          </button>
+          <button class="bento-card reveal reveal-delay-1" type="button" data-project="1">
+            <div class="bento-thumb"><span aria-hidden="true">🐉</span></div>
+            <div class="bento-info">
+              <span class="bento-badge badge-dev">◐ In Development</span>
+              <div class="bento-title">Vice Nexora</div>
+              <div class="bento-desc">An experimental browser-based gaming project exploring WebAssembly and interactive web technologies.</div>
+              <div class="bento-tech"><span class="tech-pill">Vite</span><span class="tech-pill">WebAssembly</span><span class="tech-pill">JavaScript</span></div>
+              <div class="project-hint">View details <span aria-hidden="true">↗</span></div>
+            </div>
+          </button>
+          <button class="bento-card reveal" type="button" data-project="2">
+            <div class="bento-thumb"><span aria-hidden="true">🎨</span></div>
+            <div class="bento-info">
+              <span class="bento-badge badge-dev">◐ Concept / In Development</span>
+              <div class="bento-title">PixelCraft</div>
+              <div class="bento-desc">A proposed image and video editing platform concept focused on streamlined creative workflows.</div>
+              <div class="bento-tech"><span class="tech-pill">Next.js</span><span class="tech-pill">FFmpeg</span><span class="tech-pill">AI Processing</span></div>
+              <div class="project-hint">View details <span aria-hidden="true">↗</span></div>
+            </div>
+          </button>
+          <button class="bento-card reveal reveal-delay-1" type="button" data-project="3">
+            <div class="bento-thumb"><span aria-hidden="true">🌍</span></div>
+            <div class="bento-info">
+              <span class="bento-badge badge-coming">◌ Coming Soon</span>
+              <div class="bento-title">LinguaCraft</div>
+              <div class="bento-desc">A planned language-learning platform focused on interactive lessons and engaging learning experiences.</div>
+              <div class="bento-tech"><span class="tech-pill">React</span><span class="tech-pill">TypeScript</span></div>
+              <div class="project-hint">View details <span aria-hidden="true">↗</span></div>
+            </div>
+          </button>
+          <button class="bento-card reveal reveal-delay-2" type="button" data-project="4">
+            <div class="bento-thumb"><span aria-hidden="true">📊</span></div>
+            <div class="bento-info">
+              <span class="bento-badge badge-dev">◐ Concept / In Development</span>
+              <div class="bento-title">Sportoto Analytics</div>
+              <div class="bento-desc">A statistical analysis concept for examining sports-pool combinations and probability-based scenarios.</div>
+              <div class="bento-tech"><span class="tech-pill">Analytics</span><span class="tech-pill">Statistics</span><span class="tech-pill">Data Systems</span></div>
+              <div class="project-hint">View details <span aria-hidden="true">↗</span></div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="about">
+      <div class="container about-grid">
+        <div class="about-copy reveal">
+          <span class="eyebrow">About NEXORA</span>
+          <h2>Curiosity is the <span class="gradient-text">starting point.</span></h2>
+          <p>NEXORA is an independent digital portfolio for web projects, browser tools, and experiments. The goal is to turn ideas into clear, usable experiences while continuing to learn through building.</p>
+          <p>Rather than relying on inflated metrics or unverified client claims, this portfolio focuses on projects, technologies, and work that can be explored directly.</p>
+          <div class="about-note">Project status is labeled as accurately as possible. Some entries are concepts or works in progress, not released products.</div>
+        </div>
+        <div class="about-visual reveal reveal-delay-1" aria-label="NEXORA visual identity">
+          <span class="orbit-tag tag-one">Design</span>
+          <span class="orbit-tag tag-two">Development</span>
+          <span class="orbit-tag tag-three">Experiment</span>
+          <div class="about-orbit">
+            <img src="dragon-logo.png" alt="NEXORA dragon logo" onerror="this.style.display='none'">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="stack">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="eyebrow">Tools & technologies</span>
+          <h2>Built with <span class="gradient-text">purpose.</span></h2>
+          <p>Technologies and areas connected to the projects shown here. This list is not a claim that every tool is used in every project.</p>
+        </div>
+        <div class="stack-grid">
+          <div class="stack-item reveal"><span class="stack-icon">JS</span>JavaScript</div>
+          <div class="stack-item reveal reveal-delay-1"><span class="stack-icon">TS</span>TypeScript</div>
+          <div class="stack-item reveal reveal-delay-2"><span class="stack-icon">V</span>Vite</div>
+          <div class="stack-item reveal"><span class="stack-icon">R</span>React</div>
+          <div class="stack-item reveal reveal-delay-1"><span class="stack-icon">W</span>WebAssembly</div>
+          <div class="stack-item reveal reveal-delay-2"><span class="stack-icon">CSS</span>CSS & Responsive UI</div>
+          <div class="stack-item reveal"><span class="stack-icon">EXT</span>Browser Extensions</div>
+          <div class="stack-item reveal reveal-delay-1"><span class="stack-icon">AI</span>AI / Media Concepts</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="contact">
+      <div class="container">
+        <div class="contact-shell reveal">
+          <div class="contact-copy">
+            <span class="eyebrow">Get in touch</span>
+            <h2>Have an idea? <span class="gradient-text">Let's talk.</span></h2>
+            <p>For project questions, collaboration ideas, or feedback, send a message using the form. It opens your email application with a draft; it does not send anything automatically.</p>
+            <div class="contact-detail"><span class="service-icon" aria-hidden="true">↗</span><span>Independent projects · Open to ideas</span></div>
+            <div class="contact-detail"><span class="service-icon" aria-hidden="true">⌘</span><a href="https://github.com/AliBerenKoc" target="_blank" rel="noopener noreferrer">GitHub profile ↗</a></div>
+          </div>
+          <form class="contact-form" id="contactForm">
+            <div class="field">
+              <label for="contactName">Your name</label>
+              <input id="contactName" name="name" autocomplete="name" placeholder="Name" required>
+            </div>
+            <div class="field">
+              <label for="contactEmail">Your email</label>
+              <input id="contactEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+              <label for="contactMessage">Message</label>
+              <textarea id="contactMessage" name="message" placeholder="Tell me a little about your idea..." required></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Prepare Email <span aria-hidden="true">↗</span></button>
+            <p class="form-note">This form uses your email app. Add a real contact address in the code before publishing if you want messages delivered to a specific inbox.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <a class="brand" href="#home"><img src="dragon-logo.png" alt="" onerror="this.style.display='none'"><span>NEXORA</span></a>
+      <span>Independent digital work · <span id="year"></span></span>
+      <div class="footer-links">
+        <a href="#projects">Projects</a>
+        <a href="https://github.com/AliBerenKoc" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+        <a href="#home">Back to top ↑</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="modal" id="projectModal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc">
+      <button class="modal-close" id="modalClose" type="button" aria-label="Close project details">×</button>
+      <div class="modal-icon" id="modal-icon" aria-hidden="true">✦</div>
+      <span class="bento-badge badge-dev" id="modal-badge">In Development</span>
+      <h3 id="modal-title">Project title</h3>
+      <p id="modal-desc"></p>
+      <div class="modal-tech-wrap">
+        <div class="modal-tech-label">Technologies / areas</div>
+        <div class="bento-tech" id="modal-tech"></div>
+      </div>
+      <div class="modal-actions">
+        <a class="btn btn-primary" id="modal-demo" href="#" target="_blank" rel="noopener noreferrer">View Project ↗</a>
+        <button class="btn btn-secondary" id="modal-close-secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Project data drives both the cards and their detail modal.
+    const projects = [
+      {
+        icon: '🛡️',
+        badge: 'badge-exp',
+        badgeText: 'Browser Extension',
+        title: 'Kick Ad Blocker',
+        desc: 'A browser extension developed to block advertisements on Kick.com and provide a cleaner viewing experience. A public demo or store listing has not been added yet.',
+        tech: ['Browser Extension', 'Kick.com'],
+        url: ''
+      },
+      {
+        icon: '🐉',
+        badge: 'badge-dev',
+        badgeText: 'In Development',
+        title: 'Vice Nexora',
+        desc: 'An experimental browser-based gaming project exploring WebAssembly and interactive web technologies. This is an independent, unofficial project and is not affiliated with Rockstar Games.',
+        tech: ['Vite', 'WebAssembly', 'JavaScript'],
+        url: 'https://github.com/AliBerenKoc/Vice-Nexora'
+      },
+      {
+        icon: '🎨',
+        badge: 'badge-dev',
+        badgeText: 'Concept / In Development',
+        title: 'PixelCraft',
+        desc: 'A proposed image and video editing platform concept focused on streamlined creative workflows. Treat this entry as a concept until a working demo is available.',
+        tech: ['Next.js', 'FFmpeg', 'AI Processing'],
+        url: ''
+      },
+      {
+        icon: '🌍',
+        badge: 'badge-coming',
+        badgeText: 'Coming Soon',
+        title: 'LinguaCraft',
+        desc: 'A planned language-learning platform focused on interactive lessons and engaging learning experiences.',
+        tech: ['React', 'TypeScript', 'Interactive UI'],
+        url: ''
+      },
+      {
+        icon: '📊',
+        badge: 'badge-dev',
+        badgeText: 'Concept / In Development',
+        title: 'Sportoto Analytics',
+        desc: 'A statistical analysis concept for examining sports-pool combinations and probability-based scenarios. Statistical outputs should not be interpreted as guaranteed predictions.',
+        tech: ['Analytics', 'Statistics', 'Data Systems'],
+        url: ''
+      }
+    ];
+
+    const modal = document.getElementById('projectModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalCloseSecondary = document.getElementById('modal-close-secondary');
+    let lastFocusedElement = null;
+
+    function openModal(index) {
+      const project = projects[index];
+      if (!project) return;
+
+      lastFocusedElement = document.activeElement;
+      document.getElementById('modal-icon').textContent = project.icon;
+
+      const badge = document.getElementById('modal-badge');
+      badge.className = 'bento-badge ' + project.badge;
+      badge.textContent = project.badgeText;
+
+      document.getElementById('modal-title').textContent = project.title;
+      document.getElementById('modal-desc').textContent = project.desc;
+
+      const techWrap = document.getElementById('modal-tech');
+      techWrap.replaceChildren();
+      project.tech.forEach((technology) => {
+        const pill = document.createElement('span');
+        pill.className = 'tech-pill';
+        pill.textContent = technology;
+        techWrap.appendChild(pill);
+      });
+
+      const demoLink = document.getElementById('modal-demo');
+      if (project.url) {
+        demoLink.href = project.url;
+        demoLink.hidden = false;
+        demoLink.textContent = 'View Project ↗';
+      } else {
+        demoLink.hidden = true;
+        demoLink.removeAttribute('href');
+      }
+
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      modalClose.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        lastFocusedElement.focus();
+      }
+    }
+
+    document.querySelectorAll('[data-project]').forEach((card) => {
+      card.addEventListener('click', () => openModal(Number(card.dataset.project)));
+    });
+    modalClose.addEventListener('click', closeModal);
+    modalCloseSecondary.addEventListener('click', closeModal);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    });
+
+    // Mobile navigation
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    function setMenu(open) {
+      hamburger.classList.toggle('open', open);
+      mobileMenu.classList.toggle('open', open);
+      hamburger.setAttribute('aria-expanded', String(open));
+    }
+    hamburger.addEventListener('click', () => setMenu(!mobileMenu.classList.contains('open')));
+    mobileMenu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => setMenu(false));
+    });
+    document.addEventListener('click', (event) => {
+      if (!mobileMenu.contains(event.target) && !hamburger.contains(event.target)) setMenu(false);
+    });
+
+    // Navbar state
+    const navbar = document.getElementById('navbar');
+    function updateNavbar() {
+      navbar.classList.toggle('scrolled', window.scrollY > 30);
+    }
+    window.addEventListener('scroll', updateNavbar, { passive: true });
+    updateNavbar();
+
+    // Reveal on scroll. Falls back to visible content if IntersectionObserver is unavailable.
+    const revealElements = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      const revealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -35px 0px' });
+      revealElements.forEach((element) => revealObserver.observe(element));
+    } else {
+      revealElements.forEach((element) => element.classList.add('visible'));
+    }
+
+    // Lightweight ambient particles
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    let particleWidth = 0, particleHeight = 0, particles = [], animationFrame = 0;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function resizeCanvas() {
+      if (!canvas || !ctx) return;
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      particleWidth = window.innerWidth;
+      particleHeight = window.innerHeight;
+      canvas.width = Math.floor(particleWidth * ratio);
+      canvas.height = Math.floor(particleHeight * ratio);
+      canvas.style.width = particleWidth + 'px';
+      canvas.style.height = particleHeight + 'px';
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const count = Math.min(70, Math.floor(particleWidth / 18));
+      particles = Array.from({ length: count }, () => ({
+        x: Math.random() * particleWidth,
+        y: Math.random() * particleHeight,
+        radius: Math.random() * 1.4 + .4,
+        speed: Math.random() * .22 + .06,
+        alpha: Math.random() * .35 + .12
+      }));
+    }
+
+    function drawParticles() {
+      if (!ctx || reducedMotion || document.hidden) return;
+      ctx.clearRect(0, 0, particleWidth, particleHeight);
+      particles.forEach((particle) => {
+        particle.y -= particle.speed;
+        if (particle.y < -4) {
+          particle.y = particleHeight + 4;
+          particle.x = Math.random() * particleWidth;
+        }
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(192,132,252,' + particle.alpha + ')';
+        ctx.fill();
+      });
+      animationFrame = requestAnimationFrame(drawParticles);
+    }
+
+    if (ctx && !reducedMotion) {
+      resizeCanvas();
+      drawParticles();
+      window.addEventListener('resize', resizeCanvas, { passive: true });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) cancelAnimationFrame(animationFrame);
+        else drawParticles();
+      });
+    }
+
+    // Hero video: one video element and one playback controller.
+    const heroVideo = document.getElementById('heroVideo');
+    if (heroVideo) {
+      heroVideo.muted = true;
+      heroVideo.loop = true;
+      heroVideo.playsInline = true;
+      const attemptVideoPlay = () => {
+        const promise = heroVideo.play();
+        if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+      };
+      if (!reducedMotion) {
+        heroVideo.addEventListener('canplay', attemptVideoPlay, { once: true });
+        attemptVideoPlay();
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) attemptVideoPlay();
+        });
+      } else {
+        heroVideo.removeAttribute('autoplay');
+        heroVideo.pause();
+      }
+    }
+
+    // Contact form opens a prefilled email draft. Replace this address with a real inbox before publishing.
+    document.getElementById('contactForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const name = form.elements.name.value.trim();
+      const email = form.elements.email.value.trim();
+      const message = form.elements.message.value.trim();
+      const recipient = 'hello@nexora.dev'; // Replace with your actual email address.
+      const subject = encodeURIComponent('NEXORA website message from ' + name);
+      const body = encodeURIComponent('Name: ' + name + '\nEmail: ' + email + '\n\n' + message);
+      window.location.href = 'mailto:' + recipient + '?subject=' + subject + '&body=' + body;
+    });
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Loader is removed once; a timeout fallback prevents it from trapping the page.
+    const loader = document.getElementById('loader');
+    function hideLoader() {
+      if (!loader || loader.classList.contains('hide')) return;
+      loader.classList.add('hide');
+      window.setTimeout(() => loader.remove(), 650);
+    }
+    window.addEventListener('load', () => window.setTimeout(hideLoader, 350), { once: true });
+    window.setTimeout(hideLoader, 2800);
+  </script>
+</body>
+</html>
